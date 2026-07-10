@@ -4,6 +4,6 @@ class MockCls:
 
     @staticmethod
     def route(*args, **kwargs):
-        def inner(path):
-            pass
+        def inner(function):
+            return function
         return inner
