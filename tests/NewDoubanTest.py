@@ -147,8 +147,29 @@ class ParserTest(unittest.TestCase):
         self.assertIn("内容简介", book.description)
 
     def test_tag_fallback_uses_only_captured_criteria(self):
-        tags = DoubanBookHtmlParser().get_tags("criteria = '7:历史|7:文学|8:忽略'")
-        self.assertEqual(["历史", "文学"], tags)
+        tags = DoubanBookHtmlParser().get_tags(
+            "criteria = '7:历史|7:文学|7:java|7:Java|8:忽略'"
+        )
+        self.assertEqual(["历史", "文学", "java"], tags)
+
+    def test_page_tags_are_deduplicated_case_insensitively(self):
+        html = """
+            <html><body>
+              <span property="v:itemreviewed">测试书</span>
+              <a data-url="https://book.douban.com/subject/456/">分享</a>
+              <a class="tag">Java</a>
+              <a class="tag">java</a>
+              <a class="tag">JAVA</a>
+              <a class="tag"> 编程 </a>
+            </body></html>
+        """
+
+        book = DoubanBookHtmlParser().parse_book(
+            DOUBAN_BASE + "subject/456/",
+            html,
+        )
+
+        self.assertEqual(["Java", "编程"], book.tags)
 
     def test_date_normalization(self):
         parser = DoubanBookHtmlParser()

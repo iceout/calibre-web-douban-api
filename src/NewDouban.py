@@ -366,7 +366,9 @@ class DoubanBookHtmlParser:
 
         tag_elements = html.xpath("//a[contains(@class, 'tag')]")
         if tag_elements:
-            book.tags = [self.get_text(tag_element) for tag_element in tag_elements]
+            book.tags = self.deduplicate_tags(
+                [self.get_text(tag_element) for tag_element in tag_elements]
+            )
         else:
             book.tags = self.get_tags(book_content)
         return book
@@ -375,11 +377,24 @@ class DoubanBookHtmlParser:
         tag_match = self.tag_pattern.search(book_content)
         if not tag_match:
             return []
-        return [
+        return self.deduplicate_tags([
             tag.replace("7:", "", 1)
             for tag in tag_match.group(1).split("|")
             if tag.startswith("7:")
-        ]
+        ])
+
+    @staticmethod
+    def deduplicate_tags(tags):
+        """Remove case-insensitive duplicates while preserving the first spelling."""
+        result = []
+        seen = set()
+        for tag in tags:
+            tag = tag.strip()
+            normalized = tag.casefold()
+            if tag and normalized not in seen:
+                seen.add(normalized)
+                result.append(tag)
+        return result
 
     def get_publish_date(self, date_str):
         if not date_str:
